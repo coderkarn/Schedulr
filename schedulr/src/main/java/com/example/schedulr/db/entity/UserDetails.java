@@ -28,6 +28,9 @@ public class UserDetails {
     @Column(name = "email_id", nullable = false, unique = true)
     private String emailId;
 
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
+
     @Column(name = "is_enabled")
     private Boolean isEnabled;
 
@@ -35,6 +38,8 @@ public class UserDetails {
     private LocalDateTime createdTs;
 
     //lastlogin
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
 
     @Column(name = "modified_ts")
     private LocalDateTime modifiedTs;

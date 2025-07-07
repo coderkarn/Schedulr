@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+
 @RestController
 @RequestMapping("/auth")
 @Slf4j
@@ -43,10 +45,58 @@ public class AuthenticationController {
         }
 
         // Optional: update last login etc.
+        userInfo.setLastLogin(LocalDateTime.now());
         authenticationService.saveUserDetails(userInfo);
 
         UserDetailsResponse response = new UserDetailsResponse(userInfo.getUserId(), userInfo.getEmailId());
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/create")
+    public ResponseEntity<UserDetailsResponse> createUser(@RequestBody UserDetailsRequest userDetailsRequest) throws Exception {
+        log.info("Create user request received: {}", userDetailsRequest);
+
+        // Basic validation
+        if ((userDetailsRequest.getEmailId() == null || userDetailsRequest.getEmailId().isEmpty()) &&
+                (userDetailsRequest.getUserName() == null || userDetailsRequest.getUserName().isEmpty())) {
+            throw new Exception("Email or Username must be provided");
+        }
+        log.info("Create 1 ");
+
+        if (userDetailsRequest.getPassword() == null || userDetailsRequest.getPassword().isEmpty()) {
+            throw new Exception("Password must be provided");
+        }
+        log.info("Create 2");
+
+        // Check if user already exists
+        if (userDetailsRequest.getEmailId() != null && authenticationService.checkIfEmailExists(userDetailsRequest.getEmailId()) != null) {
+            throw new Exception("User with this email already exists");
+        }
+        log.info("Create 3");
+
+        if (userDetailsRequest.getUserName() != null && authenticationService.checkIfNewUserName(userDetailsRequest.getUserName()) != null) {
+            throw new Exception("User with this username already exists");
+        }
+        log.info("Create 4");
+
+        // Create new user entity
+        UserDetails newUser = new UserDetails();
+        newUser.setUserName(userDetailsRequest.getUserName());
+        newUser.setEmailId(userDetailsRequest.getEmailId());
+        newUser.setPassword(userDetailsRequest.getPassword());
+        newUser.setFullName(userDetailsRequest.getFullName());
+        newUser.setIsEnabled(true);
+        newUser.setCreatedTs(LocalDateTime.now());
+        newUser.setLastLogin(LocalDateTime.now());
+        newUser.setModifiedTs(LocalDateTime.now());
+
+        // Save to DB
+        UserDetails savedUser = authenticationService.saveUserDetails(newUser);
+
+        // Build response
+        UserDetailsResponse response = new UserDetailsResponse(savedUser.getUserId(), savedUser.getEmailId());
+        return ResponseEntity.ok(response);
+    }
+
 
 }
